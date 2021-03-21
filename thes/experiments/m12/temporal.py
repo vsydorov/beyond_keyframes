@@ -335,6 +335,22 @@ def set_lr(optimizer, new_lr):
         param_group["lr"] = new_lr
 
 
+def get_keyframe_ranges_and_instances(v: Video_daly_ocv, include_diff: bool):
+    # general keyframe ranges of all instances
+    instance_ranges = []
+    for action_name, instances in v['instances'].items():
+        for ins_ind, instance in enumerate(instances):
+            fl = instance['flags']
+            diff = fl['isReflection'] or fl['isAmbiguous']
+            if not include_diff and diff:
+                continue
+            s, e = instance['start_frame'], instance['end_frame']
+            keyframes = [int(kf['frame'])
+                    for kf in instance['keyframes']]
+            instance_ranges.append((s, e, keyframes))
+    return instance_ranges
+
+
 # Experiments
 
 
@@ -409,14 +425,14 @@ def train_frame_classifier(workfolder, cfg_dict, add_args):
     checkpoint_path = (Manager_checkpoint_name.find_last_checkpoint(rundir))
     start_epoch = (man_ckpt.restore_model_magic(checkpoint_path))
 
-    # Positives
+    # Positives (from training videos)
     stride = 1
     max_distance = np.inf
     labeled_frames: List[Frame_labeled] = \
         prepare_label_fullframes_for_training(
             tubes_dgt_train, dataset, stride, max_distance)
 
-    # Get all negative frames from videos
+    # Get all negative frames from training videos
     negative_frames = []
     for vid in vids_train:
         v = dataset.videos_ocv[vid]
@@ -431,7 +447,11 @@ def train_frame_classifier(workfolder, cfg_dict, add_args):
                 negative_frames.append(negative_frame)
 
     import pudb; pudb.set_trace()  # XXX BREAKPOINT
-    pass
+    # Kinda sparsely sampled frames from all videos
+    sparse_samples = []
+    for vid in vids_eval:
+        v = dataset.videos_ocv[vid]
+        instance_franges = get_keyframe_ranges(v, include_diff=True)
 
     # Training
     for i_epoch in range(start_epoch, max_epoch):

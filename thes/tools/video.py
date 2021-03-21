@@ -175,6 +175,11 @@ Reading videos (copypaste from vsydorov_tools.cv)
 """
 
 
+def video_getHW(cap) -> Tuple[int, int]:
+    return (int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT)),
+            int(cap.get(cv2.CAP_PROP_FRAME_WIDTH)))
+
+
 @contextmanager
 def video_capture_open(video_path, tries=1):
     i = 0

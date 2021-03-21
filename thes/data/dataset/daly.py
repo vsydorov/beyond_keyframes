@@ -65,6 +65,9 @@ class Ncfg_daly:
     def get_dataset(cf):
         dataset = Dataset_daly_ocv(cf['dataset.mirror'])
         dataset.populate_from_folder(cf['dataset.cache_folder'])
+        # Augment video with split
+        for vid, split_name in dataset.split.items():
+            dataset.videos_ocv[vid]['split'] = split_name
         return dataset
 
     @staticmethod
@@ -254,7 +257,6 @@ def prepare_label_fullframes_for_training(
         ) -> List[Frame_labeled]:
     # Frames which we consider for this experiment
     # (universal, present in every experiment)
-    import pudb; pudb.set_trace()  # XXX BREAKPOINT
     vids_good_nums: Dict[Vid_daly, np.ndarray] = \
             sample_daly_frames_from_instances(dataset, stride=stride)
     # Retrieve frames from GT tubes
